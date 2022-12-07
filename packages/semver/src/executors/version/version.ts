@@ -1,4 +1,8 @@
-import { NxJsonConfiguration, ProjectsConfigurations } from '@nrwl/devkit';
+import {
+  NxJsonConfiguration,
+  ProjectsConfigurations,
+  type ExecutorContext,
+} from '@nrwl/devkit';
 import { forkJoin, Observable, of } from 'rxjs';
 import { concatMap, map } from 'rxjs/operators';
 import {
@@ -11,6 +15,7 @@ import { logStep } from './utils/logger';
 import { updatePackageJson } from './utils/project';
 import { getProjectRoots } from './utils/workspace';
 import { Preset } from './schema';
+import { runTargets } from './utils/run-targets';
 
 export type Version =
   | {
@@ -24,6 +29,7 @@ export type Version =
     };
 
 export interface CommonVersionOptions {
+  context: ExecutorContext;
   tag: string;
   dryRun: boolean;
   trackDeps: boolean;
@@ -33,12 +39,13 @@ export interface CommonVersionOptions {
   tagPrefix: string;
   changelogHeader: string;
   skipCommit: boolean;
+  preCommitTargets: string[];
+  postCommitTargets: string[];
   commitMessage: string;
   projectName: string;
   skipProjectChangelog: boolean;
   dependencyUpdates: Version[];
   preset: Preset;
-  workspace: ProjectsConfigurations & NxJsonConfiguration<string[] | '*'>;
 }
 
 export function versionWorkspace({
@@ -50,6 +57,8 @@ export function versionWorkspace({
   projectName,
   tag,
   skipCommit,
+  preCommitTargets,
+  postCommitTargets,
   projectRoot,
   ...options
 }: {
@@ -58,7 +67,7 @@ export function versionWorkspace({
 } & CommonVersionOptions) {
   const projectRoots = getProjectRoots(
     options.workspaceRoot,
-    options.workspace
+    options.context.workspace
   );
   return forkJoin([
     _generateChangelogs({
@@ -70,6 +79,8 @@ export function versionWorkspace({
       noVerify,
       projectName,
       skipCommit,
+      preCommitTargets,
+      postCommitTargets,
       tag,
       ...options,
     }),
@@ -115,6 +126,7 @@ export function versionWorkspace({
 }
 
 export function versionProject({
+  context,
   workspaceRoot,
   projectRoot,
   newVersion,
@@ -124,12 +136,15 @@ export function versionProject({
   tagPrefix,
   projectName,
   skipCommit,
+  preCommitTargets,
+  postCommitTargets,
   tag,
   ...options
 }: {
   projectRoot: string;
 } & CommonVersionOptions) {
   return _generateChangelogs({
+    context,
     projectName,
     projectRoots: [projectRoot],
     skipRootChangelog: true,
@@ -138,6 +153,8 @@ export function versionProject({
     commitMessage,
     dryRun,
     skipCommit,
+    preCommitTargets,
+    postCommitTargets,
     noVerify,
     tagPrefix,
     tag,
@@ -176,6 +193,19 @@ export function versionProject({
       )
     ),
     concatMap(() =>
+      runTargets({
+        context,
+        projectName,
+        targets: preCommitTargets,
+        templateStringContext: {
+          notes: '',
+          version: newVersion,
+          projectName,
+          tag,
+        },
+      })
+    ),
+    concatMap(() =>
       commit({
         skipCommit,
         dryRun,
@@ -184,6 +214,19 @@ export function versionProject({
         projectName,
       })
     ),
+    // concatMap(() =>
+    //   runTargets({
+    //     context,
+    //     projectName,
+    //     targets: postCommitTargets,
+    //     templateStringContext: {
+    //       notes: "",
+    //       version: newVersion,
+    //       projectName,
+    //       tag,
+    //     },
+    //   })
+    // ),
     concatMap(() => getLastCommitHash({ projectRoot })),
     concatMap((commitHash) =>
       createTag({

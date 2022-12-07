@@ -9,19 +9,19 @@ import { catchError, concat, defer, Observable, throwError } from 'rxjs';
 import { logStep } from './logger';
 import { coerce, createTemplateString } from './template-string';
 
-export function runPostTargets({
-  postTargets,
+export function runTargets({
+  targets,
   templateStringContext,
   context,
   projectName,
 }: {
-  postTargets: string[];
+  targets: string[];
   templateStringContext: Record<string, unknown>;
   context: ExecutorContext;
   projectName: string;
 }): Observable<void> {
   return concat(
-    ...postTargets.map((postTargetSchema) =>
+    ...targets.map((postTargetSchema) =>
       defer(async () => {
         const target = parseTargetString(postTargetSchema);
 
@@ -39,14 +39,14 @@ export function runPostTargets({
         )) {
           if (!success) {
             throw new Error(
-              `Something went wrong with post-target "${target.project}:${target.target}".`
+              `Something went wrong with target "${target.project}:${target.target}".`
             );
           }
         }
       }).pipe(
         logStep({
-          step: 'post_target_success',
-          message: `Ran post-target "${postTargetSchema}".`,
+          step: 'run_target_success',
+          message: `Ran target "${postTargetSchema}".`,
           projectName,
         }),
         catchError((error) => {
@@ -73,14 +73,14 @@ export function _getTargetOptions({
     (optionsAccumulator, [option, value]) => {
       const resolvedValue = Array.isArray(value)
         ? value.map((_element) =>
-            typeof _element !== "object"
-            ? coerce(
-                createTemplateString(
-                  (_element as number | string | boolean).toString(),
-                  context
+            typeof _element !== 'object'
+              ? coerce(
+                  createTemplateString(
+                    (_element as number | string | boolean).toString(),
+                    context
+                  )
                 )
-              )
-            : _getTargetOptions({ options: _element, context })
+              : _getTargetOptions({ options: _element, context })
           )
         : typeof value === 'object'
         ? _getTargetOptions({

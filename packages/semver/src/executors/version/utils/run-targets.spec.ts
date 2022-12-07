@@ -4,7 +4,7 @@ import {
   TargetConfiguration,
 } from '@nrwl/devkit';
 import { createFakeContext } from '../testing';
-import { runPostTargets } from './post-target';
+import { runTargets } from './run-targets';
 
 jest.mock('@nrwl/devkit', () => ({
   runExecutor: jest.fn(),
@@ -15,7 +15,7 @@ jest.mock('@nrwl/devkit', () => ({
   },
 }));
 
-describe(runPostTargets.name, () => {
+describe(runTargets.name, () => {
   const mockRunExecutor = runExecutor as jest.Mock;
   const mockReadTargetOptions = readTargetOptions as jest.Mock;
 
@@ -79,9 +79,9 @@ describe(runPostTargets.name, () => {
       optionA: 'optionA',
     });
 
-    runPostTargets({
+    runTargets({
       projectName: 'p',
-      postTargets: ['project-a:test', 'project-b:test', 'project-c:test:prod'],
+      targets: ['project-a:test', 'project-b:test', 'project-c:test:prod'],
       templateStringContext: {},
       context,
     }).subscribe({
@@ -126,9 +126,9 @@ describe(runPostTargets.name, () => {
       yield new Error('Nop!');
     });
 
-    runPostTargets({
+    runTargets({
       projectName: 'p',
-      postTargets: ['project-a:test', 'project-b:test'],
+      targets: ['project-a:test', 'project-b:test'],
       templateStringContext: {},
       context,
     }).subscribe({
@@ -136,7 +136,7 @@ describe(runPostTargets.name, () => {
       error: (error) => {
         expect(nextSpy).toBeCalledTimes(1);
         expect(error.toString()).toEqual(
-          'Error: Something went wrong with post-target "project-b:test".'
+          'Error: Something went wrong with target "project-b:test".'
         );
         expect(mockRunExecutor).toBeCalledTimes(2);
         done();
@@ -147,9 +147,9 @@ describe(runPostTargets.name, () => {
   it('should handle empty post target', (done) => {
     const errorSpy = jest.fn();
 
-    runPostTargets({
+    runTargets({
       projectName: 'p',
-      postTargets: [],
+      targets: [],
       templateStringContext: {},
       context,
     }).subscribe({
@@ -165,10 +165,10 @@ describe(runPostTargets.name, () => {
   });
 
   it('should handle wrong post target project', (done) => {
-    runPostTargets({
+    runTargets({
       projectName: 'p',
       /* The second project "project-foo" is not defined in the workspace. */
-      postTargets: ['project-a:test', 'project-foo:test'],
+      targets: ['project-a:test', 'project-foo:test'],
       templateStringContext: {},
       context,
     }).subscribe({
@@ -185,10 +185,10 @@ describe(runPostTargets.name, () => {
   });
 
   it('should handle wrong post target name', (done) => {
-    runPostTargets({
+    runTargets({
       projectName: 'p',
       /* The second target "foo" is not defined in the workspace. */
-      postTargets: ['project-a:test', 'project-b:foo'],
+      targets: ['project-a:test', 'project-b:foo'],
       templateStringContext: {},
       context,
     }).subscribe({
@@ -249,9 +249,9 @@ describe(runPostTargets.name, () => {
       falseyValue: false,
     };
 
-    runPostTargets({
+    runTargets({
       projectName: 'p',
-      postTargets: ['project-a:test', 'project-b:test', 'project-c:test'],
+      targets: ['project-a:test', 'project-b:test', 'project-c:test'],
       templateStringContext,
       context,
     }).subscribe({

@@ -10,7 +10,7 @@ type Step =
   | 'package_json_success'
   | 'changelog_success'
   | 'tag_success'
-  | 'post_target_success'
+  | 'run_target_success'
   | 'push_success'
   | 'commit_success';
 
@@ -22,7 +22,7 @@ const iconMap = new Map<Step, string>([
   ['changelog_success', '📜'],
   ['commit_success', '📦'],
   ['package_json_success', '📝'],
-  ['post_target_success', '🎉'],
+  ['run_target_success', '🎉'],
   ['tag_success', '🔖'],
   ['push_success', '🚀'],
 ]);

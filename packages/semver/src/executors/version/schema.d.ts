@@ -43,6 +43,8 @@ export interface VersionBuilderSchema {
   allowEmptyRelease?: boolean;
   skipCommitTypes?: string[];
   commitMessageFormat?: string;
+  preCommitTargets: string[];
+  postCommitTargets: string[];
   preset: Preset;
 }
 

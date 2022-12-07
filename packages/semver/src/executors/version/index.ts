@@ -14,7 +14,7 @@ import {
 } from './utils/get-project-dependencies';
 import { tryPush } from './utils/git';
 import { _logStep } from './utils/logger';
-import { runPostTargets } from './utils/post-target';
+import { runTargets } from './utils/run-targets';
 import { formatTag, formatTagPrefix } from './utils/tag';
 import { tryBump } from './utils/try-bump';
 import { getProjectRoot } from './utils/workspace';
@@ -48,6 +48,8 @@ export default async function version(
     allowEmptyRelease,
     skipCommitTypes,
     skipCommit,
+    preCommitTargets,
+    postCommitTargets,
   } = _normalizeOptions(options);
   const workspaceRoot = context.root;
   const projectName = context.projectName as string;
@@ -117,6 +119,7 @@ export default async function version(
       });
 
       const options: CommonVersionOptions = {
+        context,
         newVersion: version,
         tag,
         dryRun,
@@ -129,9 +132,10 @@ export default async function version(
         projectName,
         skipProjectChangelog,
         commitMessage,
+        preCommitTargets,
+        postCommitTargets,
         dependencyUpdates,
         skipCommit,
-        workspace: context.workspace,
       };
 
       const version$ = defer(() =>
@@ -159,10 +163,10 @@ export default async function version(
 
       const _runPostTargets = ({ notes }: { notes: string }) =>
         defer(() =>
-          runPostTargets({
+          runTargets({
             context,
             projectName,
-            postTargets,
+            targets: postTargets,
             templateStringContext: {
               notes,
               version,

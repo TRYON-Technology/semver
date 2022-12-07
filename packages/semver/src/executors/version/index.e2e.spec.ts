@@ -28,7 +28,8 @@ describe('@jscutlery/semver:version', () => {
     skipRootChangelog: false,
     syncVersions: false,
     skipCommitTypes: [],
-
+    preCommitTargets: [],
+    postCommitTargets: [],
     postTargets: [],
     preset: 'angular',
     commitMessageFormat: 'chore(${projectName}): release version ${version}',
