@@ -24,10 +24,12 @@ export default async function runExecutor({
     ...(releasedAt ? ['--released-at', releasedAt] : []),
     ...(ref ? ['--ref', ref] : []),
     ...(assets
-      ? assets.map(
-          (asset) =>
-          ['--assets-link', `{"name": "${asset.name}", "url": "${asset.url}"}`]
-        ).flat()
+      ? assets
+          .map((asset) => [
+            '--assets-link',
+            `{"name": "${asset.name}", "url": "${asset.url}"}`,
+          ])
+          .flat()
       : []),
   ]).pipe(
     mapTo({ success: true }),

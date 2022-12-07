@@ -1,5 +1,5 @@
 import { type ExecutorContext } from '@nrwl/devkit';
-import { concat, defer, lastValueFrom, of } from 'rxjs';
+import { concat, defer, forkJoin, lastValueFrom, merge, of } from 'rxjs';
 import { catchError, concatMap, reduce, switchMap } from 'rxjs/operators';
 import type { VersionBuilderSchema } from './schema';
 import {
@@ -14,7 +14,7 @@ import {
 } from './utils/get-project-dependencies';
 import { tryPush } from './utils/git';
 import { _logStep } from './utils/logger';
-import { runPostTargets } from './utils/post-target';
+import { runTargets } from './utils/run-targets';
 import { formatTag, formatTagPrefix } from './utils/tag';
 import { tryBump } from './utils/try-bump';
 import { getProjectRoot } from './utils/workspace';
@@ -48,6 +48,8 @@ export default async function version(
     allowEmptyRelease,
     skipCommitTypes,
     skipCommit,
+    preCommitTargets,
+    postCommitTargets,
   } = _normalizeOptions(options);
   const workspaceRoot = context.root;
   const projectName = context.projectName as string;
@@ -90,8 +92,22 @@ export default async function version(
     projectName,
   });
 
-  const runSemver$ = newVersion$.pipe(
-    switchMap((newVersion) => {
+  const changelogPath = getChangelogPath(
+    syncVersions ? workspaceRoot : projectRoot
+  );
+
+  const run$ = forkJoin({
+    newVersion: newVersion$,
+    changelog: newVersion$.pipe(
+      calculateChangelogChanges({
+        changelogHeader,
+        changelogPath,
+      })
+    ),
+  });
+
+  const runSemver$ = run$.pipe(
+    switchMap(({ newVersion, changelog }) => {
       if (newVersion == null) {
         _logStep({
           step: 'nothing_changed',
@@ -117,7 +133,9 @@ export default async function version(
       });
 
       const options: CommonVersionOptions = {
+        context,
         newVersion: version,
+        changelog,
         tag,
         dryRun,
         trackDeps,
@@ -131,7 +149,8 @@ export default async function version(
         commitMessage,
         dependencyUpdates,
         skipCommit,
-        workspace: context.workspace,
+        preCommitTargets,
+        postCommitTargets,
       };
 
       const version$ = defer(() =>
@@ -159,10 +178,10 @@ export default async function version(
 
       const _runPostTargets = ({ notes }: { notes: string }) =>
         defer(() =>
-          runPostTargets({
+          runTargets({
             context,
             projectName,
-            postTargets,
+            targets: postTargets,
             templateStringContext: {
               notes,
               version,
@@ -172,15 +191,7 @@ export default async function version(
           })
         );
 
-      const changelogPath = getChangelogPath(
-        syncVersions ? workspaceRoot : projectRoot
-      );
-
       return version$.pipe(
-        calculateChangelogChanges({
-          changelogHeader,
-          changelogPath,
-        }),
         concatMap((notes) =>
           concat(
             ...(push && dryRun === false ? [push$] : []),

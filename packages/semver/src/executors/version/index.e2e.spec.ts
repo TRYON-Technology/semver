@@ -32,6 +32,8 @@ describe('@jscutlery/semver:version', () => {
     postTargets: [],
     preset: 'angular',
     commitMessageFormat: 'chore(${projectName}): release version ${version}',
+    preCommitTargets: [],
+    postCommitTargets: [],
   };
 
   const additionalProjects = [

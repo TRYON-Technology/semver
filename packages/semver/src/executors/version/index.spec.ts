@@ -8,7 +8,7 @@ import * as changelog from './utils/changelog';
 import * as commit from './utils/commit';
 import { getDependencyRoots } from './utils/get-project-dependencies';
 import * as git from './utils/git';
-import { runPostTargets } from './utils/post-target';
+import { runTargets } from './utils/run-targets';
 import * as project from './utils/project';
 import { tryBump } from './utils/try-bump';
 import * as workspace from './utils/workspace';
@@ -23,7 +23,7 @@ jest.mock('./utils/commit', () => ({
 jest.mock('./utils/git');
 jest.mock('./utils/get-project-dependencies');
 jest.mock('./utils/try-bump');
-jest.mock('./utils/post-target');
+jest.mock('./utils/run-targets');
 
 describe('@jscutlery/semver:version', () => {
   const mockUpdatePackageJson =
@@ -56,8 +56,8 @@ describe('@jscutlery/semver:version', () => {
   const mockGetDependencyRoots = getDependencyRoots as jest.MockedFunction<
     typeof getDependencyRoots
   >;
-  const mockRunPostTargets = runPostTargets as jest.MockedFunction<
-    typeof runPostTargets
+  const mockRunPostTargets = runTargets as jest.MockedFunction<
+    typeof runTargets
   >;
 
   let context: ExecutorContext;
@@ -75,6 +75,8 @@ describe('@jscutlery/semver:version', () => {
     postTargets: [],
     preset: 'angular',
     commitMessageFormat: 'chore(${projectName}): release version ${version}',
+    preCommitTargets: [],
+    postCommitTargets: [],
   };
 
   beforeEach(() => {

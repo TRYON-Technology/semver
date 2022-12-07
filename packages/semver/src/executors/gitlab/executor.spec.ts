@@ -42,7 +42,8 @@ describe('@jscutlery/semver:gitlab', () => {
     expect(mockExec).toBeCalledWith(
       'release-cli',
       expect.arrayContaining([
-        '--assets-link', '{"name": "asset1", "url": "./dist/package"}',
+        '--assets-link',
+        '{"name": "asset1", "url": "./dist/package"}',
       ])
     );
     expect(output.success).toBe(true);
